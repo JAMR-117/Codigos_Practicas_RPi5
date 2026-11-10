@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  spa_controller:
+    build: .
+    container_name: algoritmo_spa
+    network_mode: "host"
+    restart: unless-stopped

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel del Seguidor Solar</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #1a252f; color: white; text-align: center; }
+        .grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 30px; }
+        .card { background: #2c3e50; width: 300px; padding: 20px; border-radius: 15px; border-top: 5px solid #95a5a6; }
+        .card.online { border-top-color: #2ecc71; }
+        .card.offline { border-top-color: #e74c3c; opacity: 0.5; }
+        .dato-grande { font-size: 2em; font-weight: bold; margin: 10px 0; color: #ecf0f1; }
+        .energia { color: #f1c40f; font-size: 1.5em; font-weight: bold; background: #34495e; padding: 10px; border-radius: 10px; margin: 15px 0;}
+        .ejes-container { display: flex; justify-content: space-between; margin-top: 15px; }
+        .eje-box { background: #34495e; padding: 10px; border-radius: 10px; width: 45%; }
+        .btn-modo { background-color: #3498db; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px;}
+    </style>
+</head>
+<body>
+    <h1>Panel del Seguidor Solar</h1>
+    <p>Sistemas Activos: <span id="conteo" style="color: #2ecc71; font-weight:bold;">0</span></p>
+    <div class="grid" id="grid-seguidores"></div>
+
+    <script>
+        async function cambiarModo(id_sistema, modoActual) {
+            const nuevoModo = modoActual === 'Sensores (LDR)' ? 'Algoritmo (SPA)' : 'Sensores (LDR)';
+            const formData = new URLSearchParams();
+            formData.append('id_sistema', id_sistema);
+            formData.append('modo', nuevoModo);
+           
+            await fetch('/api/modo', { method: 'POST', body: formData });
+            actualizar();
+        }
+
+        async function actualizar() {
+            try {
+                const res = await fetch('/api/seguidores');
+                const textData = await res.text();
+                const grid = document.getElementById('grid-seguidores');
+                let onlineCount = 0;
+               
+                if(textData.trim() === "") return;
+                const rows = textData.split('\n');
+
+                for (let row of rows) {
+                    const [id, x, y, energia, status, modo] = row.split(',');
+                    if (status === 'Online') onlineCount++;
+                   
+                    let cardId = 'card-' + id;
+                    let card = document.getElementById(cardId);
+
+                    if (!card) {
+                        card = document.createElement('div');
+                        card.id = cardId;
+                        grid.appendChild(card);
+                    }
+
+                    card.className = `card ${status.toLowerCase()}`;
+                    card.innerHTML = `
+                        <h2>${id.toUpperCase().replace('_', ' ')}</h2>
+                        <p>MODO ACTUAL: <span style="color:#3498db; font-weight:bold">${modo}</span></p>
+                        <div class="ejes-container">
+                            <div class="eje-box"><p>AZIMUT</p><div class="dato-grande">${x}°</div></div>
+                            <div class="eje-box"><p>CENIT</p><div class="dato-grande">${y}°</div></div>
+                        </div>
+                        <div class="energia"><p>ENERGÍA AHORRADA</p>${energia} Wh</div>
+                        <button class="btn-modo" onclick="cambiarModo('${id}', '${modo}')">
+                            Alternar Método de Rastreo
+                        </button>
+                    `;
+                }
+                document.getElementById('conteo').innerText = onlineCount;
+            } catch (e) { console.error("Error de red", e); }
+        }
+        setInterval(actualizar, 1000);
+        actualizar();
+    </script>
+</body>
+</html>

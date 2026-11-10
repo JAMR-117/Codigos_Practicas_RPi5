@@ -1,0 +1,16 @@
+services:
+  webapp:
+    build: .
+    container_name: app_web
+    network_mode: "host"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: servidor_nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - webapp
+    network_mode: "host"
+    restart: unless-stopped

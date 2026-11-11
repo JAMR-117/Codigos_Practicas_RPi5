@@ -8,7 +8,7 @@
 // ==========================================
 const char* ssid = "TU_RED_WIFI";
 const char* password = "TU_PASSWORD";
-const char* mqtt_server = "IP_DE_TU_RASPBERRY"; // Ej. "192.168.1.100"
+const char* mqtt_server = "192.168.1.85"; // Ej. "192.168.1.100"
 
 // ==========================================
 // 2. ASIGNACIÓN DE PINES (ADC ESP32)

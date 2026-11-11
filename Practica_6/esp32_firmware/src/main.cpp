@@ -11,7 +11,7 @@
 // Se preconfigura con las credenciales de la red local (2.4 GHz):
 const char* ssid = "Logan_2.4";
 const char* password = "L0g4n 2o25";
-const char* mqtt_server = "192.168.1.64"; // IP de la Raspberry Pi
+const char* mqtt_server = "192.168.1.85"; // IP de la Raspberry Pi
 
 // ==========================================
 // 2. ASIGNACIÓN DE PINES (ADC ESP32)

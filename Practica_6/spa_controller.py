@@ -53,12 +53,15 @@ except AttributeError:
 
 client.on_message = on_message
 
-print(f"Conectando al Broker MQTT en {BROKER}:{PUERTO}...", flush=True)
-try:
-    client.connect(BROKER, PUERTO, 60)
-except Exception as e:
-    print(f"[FATAL] No se pudo conectar al Broker MQTT: {e}. Verifique que el servicio Mosquitto esté activo.", flush=True)
-    sys.exit(1)
+while True:
+    print(f"Conectando al Broker MQTT en {BROKER}:{PUERTO}...", flush=True)
+    try:
+        client.connect(BROKER, PUERTO, 60)
+        print("[MQTT] Conectado exitosamente al broker.", flush=True)
+        break
+    except Exception as e:
+        print(f"[WARN] No se pudo conectar al Broker MQTT ({e}). Reintentando en 3s...", flush=True)
+        time.sleep(3)
 
 client.subscribe(TOPIC_MODO)
 client.loop_start()

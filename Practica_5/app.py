@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request
 import paho.mqtt.client as mqtt
 import time
+import threading
 
 app = Flask(__name__)
 
@@ -8,7 +9,12 @@ sistemas_detectados = {}
 TIEMPO_INACTIVIDAD = 5
 POTENCIA_AHORRO_W = 0.6
 
-client = mqtt.Client()
+# Compatibilidad con paho-mqtt v1 y v2
+try:
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
+except AttributeError:
+    client = mqtt.Client()
+
 def on_message(client, userdata, msg):
     try:
         payload = msg.payload.decode()
@@ -45,12 +51,23 @@ def on_message(client, userdata, msg):
     except Exception as e:
         pass
 
-
-
 client.on_message = on_message
-client.connect("127.0.0.1", 1883, 60)
-client.subscribe("seguidor/#")
-client.loop_start()
+
+# Hilo de conexión MQTT en segundo plano para evitar que app.py se cierre si Mosquitto no está activo
+def init_mqtt():
+    while True:
+        try:
+            print("[MQTT] Intentando conectar al broker en 127.0.0.1:1883...", flush=True)
+            client.connect("127.0.0.1", 1883, 60)
+            client.subscribe("seguidor/#")
+            client.loop_start()
+            print("[MQTT] Conectado exitosamente al broker y suscrito a 'seguidor/#'", flush=True)
+            break
+        except Exception as e:
+            print(f"[MQTT] Broker no disponible aún ({e}). Reintentando en 3s...", flush=True)
+            time.sleep(3)
+
+threading.Thread(target=init_mqtt, daemon=True).start()
 
 @app.route('/')
 def index():
@@ -74,7 +91,10 @@ def cambiar_modo():
     if id_sistema in sistemas_detectados:
         sistemas_detectados[id_sistema]["modo"] = nuevo_modo
         num_sistema = id_sistema.split('_')[1]
-        client.publish(f"seguidor/{num_sistema}/modo", nuevo_modo)
+        try:
+            client.publish(f"seguidor/{num_sistema}/modo", nuevo_modo)
+        except Exception as e:
+            print(f"[MQTT] Error al publicar cambio de modo: {e}", flush=True)
     return "ok"
 
 if __name__ == '__main__':
